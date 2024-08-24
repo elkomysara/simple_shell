@@ -1,11 +1,71 @@
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
 #include <string.h>
+#include "simple_shell.h"
 
-/* External declaration of environ */
-extern char **environ;
+/**
+* display_prompt - Display the shell prompt
+*/
+void display_prompt(void)
+{
+printf("#cisfun$ ");
+}
+
+/**
+* read_command - Read the command from standard input
+*
+* Return: The command line
+*/
+char *read_command(void)
+{
+char *line = NULL;
+size_t len = 0;
+ssize_t nread;
+
+nread = getline(&line, &len, stdin);
+if (nread == -1)
+{
+if (feof(stdin))
+{
+printf("\n");
+free(line);
+exit(0); /* Handle EOF (Ctrl+D) */
+}
+perror("getline");
+free(line);
+return (NULL);
+}
+
+/* Remove the newline character from the input */
+line[strcspn(line, "\n")] = '\0';
+
+return (line);
+}
+
+/**
+* execute_command - Execute the command using execve
+* @cmd: The command to execute
+*/
+void execute_command(char *cmd)
+{
+char *argv[2];
+
+/* Skip empty input */
+if (cmd[0] == '\0')
+{
+return;
+}
+
+argv[0] = cmd;
+argv[1] = NULL;
+
+/* Execute the command */
+if (execve(argv[0], argv, environ) == -1)
+{
+perror(cmd);
+}
+}
 
 /**
 * main - Entry point for the simple shell
@@ -14,51 +74,18 @@ extern char **environ;
 */
 int main(void)
 {
-char *line = NULL;
-size_t len = 0;
-ssize_t nread;
-char *argv[2];
+char *cmd;
 
 while (1)
 {
-/* Display the prompt */
-printf("#cisfun$ ");
-
-/* Read the input line */
-nread = getline(&line, &len, stdin);
-if (nread == -1)
+display_prompt();
+cmd = read_command();
+if (cmd)
 {
-if (feof(stdin))
-{
-/* Handle EOF (Ctrl+D) */
-printf("\n");
-break;
-}
-perror("getline");
-continue;
-}
-
-/* Remove the newline character from the input */
-line[strcspn(line, "\n")] = '\0';
-
-/* Skip empty input */
-if (line[0] == '\0')
-{
-continue;
-}
-
-/* Prepare the arguments for execve */
-argv[0] = line;
-argv[1] = NULL;
-
-/* Execute the command */
-if (execve(argv[0], argv, environ) == -1)
-{
-perror(argv[0]);  /* Display the command as part of the error */
+execute_command(cmd);
+free(cmd);
 }
 }
 
-/* Free the allocated memory */
-free(line);
 return (0);
 }
