@@ -9,6 +9,7 @@
 */
 void display_prompt(void)
 {
+if (isatty(STDIN_FILENO)) /* Display prompt only in interactive mode */
 printf("#cisfun$ ");
 }
 
@@ -28,7 +29,6 @@ if (nread == -1)
 {
 if (feof(stdin))
 {
-printf("\n");
 free(line);
 exit(0); /* Handle EOF (Ctrl+D) */
 }
@@ -46,8 +46,10 @@ return (line);
 /**
 * execute_command - Execute the command using execve
 * @cmd: The command to execute
+* @argv0: The name of the shell program (argv[0])
+* @line_number: The current line number for the command
 */
-void execute_command(char *cmd)
+void execute_command(char *cmd, char *argv0, int line_number)
 {
 char *argv[2];
 
@@ -63,26 +65,35 @@ argv[1] = NULL;
 /* Execute the command */
 if (execve(argv[0], argv, environ) == -1)
 {
-perror(cmd);
+fprintf(stderr, "%s: %d: %s: not found\n", argv0, line_number, cmd);
 }
 }
 
 /**
 * main - Entry point for the simple shell
 *
+* @argc: Argument count
+* @argv: Argument vector
+*
 * Return: Always 0 (Success)
 */
-int main(void)
+int main(int argc, char **argv)
 {
 char *cmd;
+int line_number;
+
+(void)argc; /* Suppress unused parameter warning */
+
+line_number = 0;
 
 while (1)
 {
+line_number++;
 display_prompt();
 cmd = read_command();
 if (cmd)
 {
-execute_command(cmd);
+execute_command(cmd, argv[0], line_number);
 free(cmd);
 }
 }
