@@ -1,3 +1,4 @@
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -40,6 +41,12 @@ continue;
 /* Remove the newline character from the input */
 line[strcspn(line, "\n")] = '\0';
 
+/* Skip empty input */
+if (line[0] == '\0')
+{
+continue;
+}
+
 /* Prepare the arguments for execve */
 argv[0] = line;
 argv[1] = NULL;
@@ -47,7 +54,7 @@ argv[1] = NULL;
 /* Execute the command */
 if (execve(argv[0], argv, environ) == -1)
 {
-perror("./shell");
+perror(argv[0]);  /* Display the command as part of the error */
 }
 }
 
